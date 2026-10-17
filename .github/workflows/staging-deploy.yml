@@ -1,14 +1,14 @@
 name: Staging Deploy
 
 on:
-  workflow_run:
-    workflows: ["Frontend CI", "Staging CI"]
-    types: [completed]
-    branches: [dev]
   workflow_dispatch:
     inputs:
       frontend_sha:
-        description: SHA cua repo frontend can deploy (de trong = lan CI xanh gan nhat)
+        description: SHA cua repo frontend can deploy (de trong = dau branch dev hien tai)
+        required: false
+        type: string
+      backend_sha:
+        description: SHA cua repo backend can ghi status staging
         required: false
         type: string
 
@@ -17,16 +17,15 @@ permissions:
   statuses: write
 
 concurrency:
-  group: staging-deploy-${{ github.event.workflow_run.name || 'manual' }}
+  group: staging-deploy
   cancel-in-progress: false
 
 jobs:
   frontend:
     name: Deploy frontend to Vercel
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.name == 'Frontend CI' &&
-       github.event.workflow_run.conclusion == 'success')
+    # Repo FE dispatch sang day sau khi job Build xanh (workflow_dispatch
+    # khong phat sinh workflow_run, nen day la diem noi duy nhat).
+    if: github.event.inputs.frontend_sha != '' || github.event.inputs.backend_sha == ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -37,10 +36,8 @@ jobs:
       - name: Resolve frontend commit
         id: sha
         run: |
-          if [ -n "${{ inputs.frontend_sha }}" ]; then
-            echo "value=${{ inputs.frontend_sha }}" >> "$GITHUB_OUTPUT"
-          elif [ -n "${{ github.event.workflow_run.head_sha }}" ]; then
-            echo "value=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          if [ -n "${{ github.event.inputs.frontend_sha }}" ]; then
+            echo "value=${{ github.event.inputs.frontend_sha }}" >> "$GITHUB_OUTPUT"
           else
             git ls-remote https://github.com/PNV-do-an/AI-Interview-Platform-FE dev | awk '{print "value="$1}' >> "$GITHUB_OUTPUT"
           fi
@@ -75,19 +72,19 @@ jobs:
 
   backend:
     name: Record backend staging
-    # Render moi la noi build + deploy backend (checksPass tren repo BE).
-    # Job nay ghi ket qua CI ve branch mac dinh cua repo nay de mot cho theo doi.
-    if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.name == 'Staging CI'
+    # Render moi la noi build + deploy backend (gate checksPass tren commit dev
+    # cua repo BE). Job nay chi ghi ket qua ve day de theo doi mot cho.
+    if: github.event.inputs.backend_sha != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Probe Render and publish status
         uses: actions/github-script@v7
+        env:
+          BACKEND_SHA: ${{ github.event.inputs.backend_sha }}
         with:
           script: |
-            const run = context.payload.workflow_run;
+            const sha = process.env.BACKEND_SHA;
             const probe = async () => {
               try {
                 const r = await fetch('https://ai-interview-backend-staging.onrender.com/api/v1/packages',
@@ -100,14 +97,13 @@ jobs:
               await new Promise(r => setTimeout(r, 30000));
               code = await probe();
             }
-            const ok = run.conclusion === 'success';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
-              state: ok ? 'success' : 'failure',
+              state: code === 200 ? 'success' : 'failure',
               context: 'backend / staging',
-              description: `${run.head_sha.slice(0, 7)} Render: ${code}`,
-              target_url: run.html_url,
+              description: `BE ${sha.slice(0, 7)} Render /api/v1/packages = ${code}`,
+              target_url: `https://github.com/PNV-do-an/AI-Interview-Platform-BE/commit/${sha}`,
             });
-            core.info(`backend ${run.head_sha} -> CI ${run.conclusion}, Render /api/v1/packages = ${code}`);
+            core.info(`backend ${sha} -> Render ${code}`);

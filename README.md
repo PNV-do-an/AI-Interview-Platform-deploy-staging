@@ -8,24 +8,26 @@ Repo điều phối triển khai staging + kho tài liệu đặc tả. Không c
 feature branch → PR → merge dev
         │
         ├── AI-Interview-Platform-FE ── Frontend CI (npm ci + build)
-        │                                     │ workflow_run (chỉ khi xanh)
+        │                                     │ build xanh tren dev
+        │                                     │ → workflow_dispatch (DEPLOY_PAT)
         │                                     ▼
         │                            repo nầy: Staging Deploy
-        │                                     │ vercel build --prod + deploy
+        │                                     │ vercel pull + build --prod + deploy
         │                                     ▼
         │                        https://aiinterview-vn.vercel.app
         │
         └── AI-Interview-Platform-BE ── Staging CI (mvn -B clean test)
                                               │ check "Backend tests" xanh
-                                              ▼
-                                    Render (autoDeployTrigger: checksPass)
-                                              ▼
-                        https://ai-interview-backend-staging.onrender.com
+                                              ├─▶ Render (checksPass) build & deploy
+                                              │        https://ai-interview-backend-staging.onrender.com
+                                              └─▶ workflow_dispatch (DEPLOY_PAT) → repo nầy
+                                                    ghi status "backend / staging" + probe Render
 ```
 
-Backend không đi qua repo nầy vì Render build trực tiếp từ `render.yaml` trong
-repo BE; repo nầy chỉ nhận kết quả CI để làm bảng theo dõi chung
-(context `backend / staging`).
+`workflow_run` không dùng được vì nó **chỉ phát trong cùng một repository**
+(đo ngày 2026-10-17: run `Frontend CI` #2 kết thúc 16:55:16, repo deploy
+không tạo run nào). Nên hai repo FE/BE chủ động gọi `workflow_dispatch` sang
+repo nầy bằng PAT.
 
 ## Chạy local
 
@@ -44,18 +46,29 @@ docker compose up -d --build          # db + backend + frontend (3000)
 docker compose --profile sso up -d    # thêm Keycloak ở 8180
 ```
 
-## Secrets cần có trong repo nầy
+## Secrets
+
+Trong repo nầy:
 
 | Tên | Lấy ở đâu |
 |---|---|
 | `VERCEL_TOKEN` | vercel.com → Account → Settings → Tokens |
-| `VERCEL_ORG_ID` | `team_...`, xem `vercel project inspect` hoặc repo cũ |
-| `VERCEL_PROJECT_ID` | `prj_...`, hoặc `AI-Interview-Platform-FE/.vercel/project.json` |
+| `VERCEL_ORG_ID` | `team_bgWCYiMMgj6WD2svhdjU5Kpg` |
+| `VERCEL_PROJECT_ID` | `prj_Y3gCKVlIjThmzhqziNQcQzTrdGJm` (xem `AI-Interview-Platform-FE/.vercel/project.json`) |
+
+Trong repo FE **và** repo BE:
+
+| Tên | Lấy ở đâu |
+|---|---|
+| `DEPLOY_PAT` | GitHub → Settings → Developer settings → Fine-grained tokens, chỉ cấp repo nầy với quyền **Actions: read and write** |
 
 ## Runbook
 
 Deploy frontend thủ công theo một SHA cụ thể (dùng khi rollback):
-Actions → **Staging Deploy** → Run workflow → điền `frontend_sha`.
+Actions → **Staging Deploy** → Run workflow → điền `frontend_sha` để nguyên
+nếu muốn deploy đúng đầu branch `dev`.
+
+Ghi lại kết quả backend: Run workflow → điền `backend_sha`.
 
 Kiểm tra nhanh sau deploy:
 
