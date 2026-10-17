@@ -24,8 +24,8 @@ Trạng thái: `DATA` = dựng theo mockup + số liệu thật; `UI` = theo moc
 | — (mockup không có màn này) | /verify | `views/pages/VerifyEmailPage.tsx` | DATA | Trang nhận `?token=` từ email, gọi `GET /api/v1/auth/verify`, hiển thị message API nguyên văn + link Sign in. |
 | interviewai_two_factor_authentication_2fa | /two-factor | `views/pages/TwoFactorPage.tsx` | STATIC | Không có API 2FA. |
 | interviewai_magic_link_confirmation | /magic-link | `views/pages/MagicLinkPage.tsx` | STATIC | Nút "Email me a magic link" ở LoginPage đang là chỗ trống. |
-| interviewai_reset_password | /forgot-password | `views/pages/ForgotPasswordPage.tsx` | DATA | Nhãn đã theo chrome tiếng Anh. |
-| interviewai_set_new_password_confirmation | /reset-password | `views/pages/ResetPasswordPage.tsx` | DATA | Nhãn đã theo chrome tiếng Anh. |
+| interviewai_reset_password | /forgot-password | `views/pages/ForgotPasswordPage.tsx` | DATA | Plan `features/password-reset.md`. Nút SMS chỉ hiện notice (không có API SMS); resend có cooldown 30s. |
+| interviewai_set_new_password_confirmation | /reset-password | `views/pages/ResetPasswordPage.tsx` | DATA | Plan `features/password-reset.md`. Pill đếm thời gian + chip danh tính lấy từ `GET /reset-password?token=`; modal hiển thị `eventId` + trạng thái thu hồi thật, không đếm số phiên. |
 | interviewai_public_landing_page | `/` khi chưa đăng nhập | `views/pages/LandingPage.tsx` | STATIC | `HomeRoute` trong `App.tsx` quyết định: đã đăng nhập -> /dashboard. |
 | interviewai_public_job_board | /opportunities | `views/pages/PublicJobBoardPage.tsx` | STATIC | 5 job demo copy từ mockup, filter local. Route công khai. |
 

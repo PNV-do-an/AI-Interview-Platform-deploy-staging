@@ -40,6 +40,8 @@ Mỗi mục ghi cách kiểm chứng. "Đã đo" = tự chạy; "agent báo" = g
 - Thanh toán chỉ giả lập: `backend/.../OrderServiceImpl.java:59-76`; `PackagesPage` gọi `payOrder` ngay sau `createOrder`.
 - Hạn mức gói (`jobPostLimit`, `durationDays`) không bị chặn khi tạo tin.
 - AI chấm là rule-based, không phải model thật.
+- **Thu hồi phiên sau reset mật khẩu chỉ chặn được refresh token.** Đã đo 2026-10-17: `POST /auth/refresh` bằng token phát trước khi reset trả 401 "Phiên đăng nhập không còn hiệu lực" (claim `tv` so với `users.token_version`), nhưng access token cũ hạn **24h** vẫn qua `JwtFilter` tới khi hết hạn. Muốn thu hồi tức thời: rút TTL access token xuống ngắn + dựa vào `/refresh`, hoặc blacklist token — cần anh chốt (`features/password-reset.md` mục 9).
+- **Không có API danh sách phiên/thiết bị đang đăng nhập** (không có bảng session, chỉ có `users.token_version`) -> mockup "REVOCATION_STATUS: COMPLETED (2 SESSIONS)" render thành trạng thái thật `COMPLETED (ALL SESSIONS)` / `SKIPPED (THIS DEVICE ONLY)`, không đếm số phiên.
 - `ViewController`, `AuthorizationController` là endpoint chết.
 - Hầu hết bảng không có migration (chỉ V1-V5, mà Flyway đang tắt) -> schema tiến hoá bằng `ddl-auto`, lệch nhau giữa các môi trường (chính là nguyên nhân mục 1).
 
