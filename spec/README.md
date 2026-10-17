@@ -1,0 +1,40 @@
+# Spec
+
+Thư mục kế hoạch (plan) cho AI và người. Khi nhận một yêu cầu tính năng, đọc ở đây trước khi mở code.
+
+## Cấu trúc
+
+```
+spec/
+  README.md                      file này — cách dùng thư mục
+  INDEX.md                       29 màn Stitch -> route -> file -> trạng thái -> thiếu gì
+  conventions/frontend-ui.md     luật giao diện bắt buộc tuân theo (design system Stitch)
+  verification.md                cách build + soát DOM thật, kèm các bẫy đã gặp
+  known-gaps.md                  lỗ hổng backend/API/số liệu đã kiểm chứng, chưa sửa
+  templates/feature-plan.md      mẫu kế hoạch cho tính năng mới
+  features/<ten-tinh-nang>.md    kế hoạch chi tiết từng tính năng (một file một feature)
+```
+
+## Cách dùng khi code một thứ mới
+
+1. Tìm màn/tính năng tương ứng trong `INDEX.md`. Nếu chưa có dòng nào -> tạo `features/<ten>.md` từ `templates/feature-plan.md` và điền trước phần Mục tiêu, Mockup nguồn, Phạm vi, Không làm.
+2. Đọc `conventions/frontend-ui.md` (nếu chạm UI) và `known-gaps.md` (nếu chạm số liệu/API) — hai file này trả lời sẵn những câu sẽ bị hỏi lại.
+3. Ghi vào file plan: ánh xạ field thật -> thành phần UI, và danh sách khối mockup **bỏ** kèm lý do (thiếu endpoint/thiếu column). Đây là phần giá trị nhất của plan.
+4. Làm theo plan, rồi cập nhật lại trạng thái trong `INDEX.md` và mục Kết quả trong file plan.
+5. chạy các bước trong `verification.md` trước khi báo xong.
+
+## Quy ước
+
+- Một file plan = một tính năng, tên ke-case: `features/job-approval-workflow.md`.
+- Trạng thái screen: `TODO` (chưa có file) / `UI` (đã dựng form, chưa nối số liệu) / `DATA` (dùng số liệu thật) / `STATIC` (màn tĩnh theo mockup, cố ý không có API) / `BLOCKED` (chờ backend).
+- Plan ghi **thứ đã kiểm chứng** kèm cách kiểm chứng (curl, log container, DOM), không ghi suy đoán.
+- Số liệu ước lượng chi phí/thời gian: không ghi vào spec.
+- Spec là tài liệu làm việc, không commit chung một lô với code tính năng nếu chưa xong; xoá các file tạm (`*.test.tsx` chạy một lần, script probe) sau khi dùng.
+
+## Định nghĩa "xong" cho một màn
+
+- `npx tsc --noEmit` sạch.
+- Render thật trong container nginx :3000 (đã `docker compose build frontend`), không còn bundle cache.
+- Không có `style={{...}}` ngoài width/height % động; không có hex literal không giải thích.
+- Khối nào bỏ phải có dòng ghi lý do trong plan (thiếu endpoint nào, column nào).
+- Không có chữ bịa số liệu ở màn thuộc loại `DATA`/`UI`.

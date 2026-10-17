@@ -1,0 +1,72 @@
+{
+  "realm": "ai-interview",
+  "enabled": true,
+  "sslRequired": "NONE",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "clients": [
+    {
+      "clientId": "ai-interview-backend",
+      "name": "AI Interview Platform",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "ai-interview-sso-dev-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/login",
+        "http://192.168.65.254:3000/login"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://192.168.65.254:3000"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "hr@acme.com",
+      "email": "hr@acme.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Huy",
+      "lastName": "Nguyen",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "SsoDev@12345",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "candidate@gmail.com",
+      "email": "candidate@gmail.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Outside",
+      "lastName": "User",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "SsoDev@12345",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
