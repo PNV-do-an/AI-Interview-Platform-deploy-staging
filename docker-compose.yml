@@ -23,11 +23,11 @@ services:
       - ai_interview_network
 
   # ── Backend (Spring Boot) ─────────────────────────────────────────────────
-  # Build tu ban clone repo tach nam canh repo nay (xem README).
-  # Muon build thang tu GitHub: context: https://github.com/PNV-do-an/AI-Interview-Platform-BE.git#dev
+  # `backend` va `frontend` la submodule cua superrepo nay.
+  # Sau khi clone: git submodule update --init --recursive
   backend:
     build:
-      context: ../AI-Interview-Platform-BE
+      context: ./backend
       dockerfile: Dockerfile
     container_name: ai_interview_backend
     restart: unless-stopped
@@ -65,7 +65,7 @@ services:
   # ── Frontend (React + Nginx) ──────────────────────────────────────────────
   frontend:
     build:
-      context: ../AI-Interview-Platform-FE
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: ai_interview_frontend
     restart: unless-stopped

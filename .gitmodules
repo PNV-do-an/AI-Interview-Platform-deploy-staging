@@ -1,0 +1,8 @@
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/PNV-do-an/AI-Interview-Platform-FE.git
+	branch = dev
+[submodule "backend"]
+	path = backend
+	url = https://github.com/PNV-do-an/AI-Interview-Platform-BE.git
+	branch = dev

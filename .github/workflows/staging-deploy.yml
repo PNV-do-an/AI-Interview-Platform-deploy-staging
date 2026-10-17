@@ -1,56 +1,78 @@
 name: Staging Deploy
 
 on:
+  push:
+    branches: [dev]
   workflow_dispatch:
     inputs:
-      frontend_sha:
-        description: SHA cua repo frontend can deploy (de trong = dau branch dev hien tai)
+      force:
+        description: Chay ca 2 job bat ke commit co doi submodule hay khong
         required: false
-        type: string
-      backend_sha:
-        description: SHA cua repo backend can ghi status staging
-        required: false
-        type: string
+        type: boolean
+        default: false
 
 permissions:
   contents: read
-  statuses: write
 
 concurrency:
   group: staging-deploy
   cancel-in-progress: false
 
 jobs:
+  detect:
+    name: Detect changed submodules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      frontend: ${{ steps.diff.outputs.frontend }}
+      backend: ${{ steps.diff.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare with previous commit
+        id: diff
+        run: |
+          base=$(git rev-parse HEAD^ 2>/dev/null || echo "")
+          if [ -z "$base" ]; then
+            changed=""
+          else
+            changed=$(git diff --name-only "$base" HEAD)
+          fi
+          echo "changed paths:"; echo "$changed" | sed 's/^/  /'
+          fe=false; be=false
+          echo "$changed" | grep -qx 'frontend' && fe=true
+          echo "$changed" | grep -qx 'backend' && be=true
+          if [ "${{ inputs.force }}" = "true" ]; then fe=true; be=true; fi
+          echo "frontend=$fe" >> "$GITHUB_OUTPUT"
+          echo "backend=$be" >> "$GITHUB_OUTPUT"
+
   frontend:
     name: Deploy frontend to Vercel
-    # Repo FE dispatch sang day sau khi job Build xanh (workflow_dispatch
-    # khong phat sinh workflow_run, nen day la diem noi duy nhat).
-    if: github.event.inputs.frontend_sha != '' || github.event.inputs.backend_sha == ''
+    needs: detect
+    if: needs.detect.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - name: Resolve frontend commit
-        id: sha
-        run: |
-          if [ -n "${{ github.event.inputs.frontend_sha }}" ]; then
-            echo "value=${{ github.event.inputs.frontend_sha }}" >> "$GITHUB_OUTPUT"
-          else
-            git ls-remote https://github.com/PNV-do-an/AI-Interview-Platform-FE dev | awk '{print "value="$1}' >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/checkout@v4
         with:
-          repository: PNV-do-an/AI-Interview-Platform-FE
-          ref: ${{ steps.sha.outputs.value }}
+          submodules: recursive
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Show pinned commit
+        working-directory: ${{ github.workspace }}
+        run: git -C frontend log --oneline -1
 
       - name: Install dependencies
         run: npm ci
@@ -68,42 +90,40 @@ jobs:
         run: |
           sleep 5
           curl -fsS https://aiinterview-vn.vercel.app -o /dev/null
-          echo "frontend dev -> ${{ steps.sha.outputs.value }} da live"
+          echo "frontend da live"
 
   backend:
-    name: Record backend staging
-    # Render moi la noi build + deploy backend (gate checksPass tren commit dev
-    # cua repo BE). Job nay chi ghi ket qua ve day de theo doi mot cho.
-    if: github.event.inputs.backend_sha != ''
+    name: Deploy backend on Render
+    needs: detect
+    if: needs.detect.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
-      - name: Probe Render and publish status
-        uses: actions/github-script@v7
-        env:
-          BACKEND_SHA: ${{ github.event.inputs.backend_sha }}
+      - uses: actions/checkout@v4
         with:
-          script: |
-            const sha = process.env.BACKEND_SHA;
-            const probe = async () => {
-              try {
-                const r = await fetch('https://ai-interview-backend-staging.onrender.com/api/v1/packages',
-                                      { signal: AbortSignal.timeout(30000) });
-                return r.status;
-              } catch (e) { return 'err:' + e.name; }
-            };
-            let code = await probe();
-            for (let i = 0; i < 6 && code !== 200; i++) {
-              await new Promise(r => setTimeout(r, 30000));
-              code = await probe();
-            }
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: code === 200 ? 'success' : 'failure',
-              context: 'backend / staging',
-              description: `BE ${sha.slice(0, 7)} Render /api/v1/packages = ${code}`,
-              target_url: `https://github.com/PNV-do-an/AI-Interview-Platform-BE/commit/${sha}`,
-            });
-            core.info(`backend ${sha} -> Render ${code}`);
+          submodules: recursive
+
+      - name: Show pinned commit
+        run: git -C backend log --oneline -1
+
+      - name: Trigger Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "Thieu secret RENDER_DEPLOY_HOOK_URL"; exit 1
+          fi
+          code=$(curl -sS -o /tmp/render.json -w '%{http_code}' -X POST "$HOOK")
+          echo "render hook HTTP $code"
+          [ "$code" = "200" ] || [ "$code" = "202" ] || { cat /tmp/render.json; exit 1; }
+
+      - name: Wait for service to come back
+        run: |
+          url=https://ai-interview-backend-staging.onrender.com/api/v1/packages
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url" || echo 000)
+            echo "attempt $i -> $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "backend khong health sau ~10 phut"; exit 1
