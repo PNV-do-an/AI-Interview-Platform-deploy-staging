@@ -51,14 +51,15 @@ Trong repo nầy:
 |---|---|
 | `VERCEL_TOKEN` | vercel.com → Account → Settings → Tokens |
 | `VERCEL_ORG_ID` | `team_bgWCYiMMgj6WD2svhdjU5Kpg` |
-| `VERCEL_PROJECT_ID` | `prj_Y3gCKVlIjThmzhqziNQcQzTrdGJm` (xem `AI-Interview-Platform-FE/.vercel/project.json`) |
+| `VERCEL_PROJECT_ID` | `prj_Y3gCKVlIjThmzhqziNQcQzTrdGJm` |
 | `RENDER_DEPLOY_HOOK_URL` | Render → service `ai-interview-backend-staging` → Settings → **Deploy hooks** |
+| `DEPLOY_PAT` | xem hàng dưới — job `frontend` còn dùng token này để checkout submodule |
 
 Trong repo FE **và** repo BE:
 
 | Tên | Lấy ở đâu |
 |---|---|
-| `DEPLOY_PAT` | GitHub fine-grained token, chỉ cấp repo nầy, quyền **Contents: read and write** |
+| `DEPLOY_PAT` | GitHub fine-grained token, quyền **Contents: read and write**; bắt buộc nhất là repo nầy (bot push commit bump submodule), thêm FE/BE để checkout khi repo chuyển private |
 
 ## Runbook
 
