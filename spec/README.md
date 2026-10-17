@@ -7,6 +7,7 @@ Thư mục kế hoạch (plan) cho AI và người. Khi nhận một yêu cầu 
 ```
 spec/
   README.md                      file này — cách dùng thư mục
+  srs-core-baseline.md           SRS Core Baseline (3 vai trò) -> đối chiếu từng FR/NFR với code thật
   INDEX.md                       29 màn Stitch -> route -> file -> trạng thái -> thiếu gì
   conventions/frontend-ui.md     luật giao diện bắt buộc tuân theo (design system Stitch)
   verification.md                cách build + soát DOM thật, kèm các bẫy đã gặp
@@ -18,6 +19,7 @@ spec/
 ## Cách dùng khi code một thứ mới
 
 1. Tìm màn/tính năng tương ứng trong `INDEX.md`. Nếu chưa có dòng nào -> tạo `features/<ten>.md` từ `templates/feature-plan.md` và điền trước phần Mục tiêu, Mockup nguồn, Phạm vi, Không làm.
+1b. Nếu yêu cầu đến từ phạm vi nghiệp vụ (không phải một màn), chiếu mã FR/NFR trong `srs-core-baseline.md` trước — file đó đã ghi yêu cầu nào code thật đang đáp ứng, yêu cầu nào chưa, và quyết định nào còn thuộc chủ dự án.
 2. Đọc `conventions/frontend-ui.md` (nếu chạm UI) và `known-gaps.md` (nếu chạm số liệu/API) — hai file này trả lời sẵn những câu sẽ bị hỏi lại.
 3. Ghi vào file plan: ánh xạ field thật -> thành phần UI, và danh sách khối mockup **bỏ** kèm lý do (thiếu endpoint/thiếu column). Đây là phần giá trị nhất của plan.
 4. Làm theo plan, rồi cập nhật lại trạng thái trong `INDEX.md` và mục Kết quả trong file plan.
