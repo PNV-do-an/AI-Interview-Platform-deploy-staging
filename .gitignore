@@ -1,0 +1,14 @@
+# node
+node_modules/
+
+# env & secrets (khong bao gio commit)
+.env
+*.env.local
+staging.env.local
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
