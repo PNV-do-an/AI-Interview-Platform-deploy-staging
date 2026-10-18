@@ -16,6 +16,17 @@ spec/
   features/<ten-tinh-nang>.md    kế hoạch chi tiết từng tính năng (một file một feature)
 ```
 
+## Bản cắt theo mảng
+
+Hai repo code mang bản sao để đọc ngay cạnh code; **bản gốc vẫn là thư mục `spec/` ở đây**, và vẫn là nơi để sửa.
+
+| Repo | `spec/` gồm |
+|---|---|
+| `AI-Interview-Platform-FE` | `README.md` (riêng), `INDEX.md`, `conventions/frontend-ui.md`, `verification.md`, `features/mockup-parity-next.md`, `templates/feature-plan.md` |
+| `AI-Interview-Platform-BE` | `README.md` (riêng), `srs-core-baseline.md`, `known-gaps.md`, `features/sign-up.md`, `features/password-reset.md`, `templates/feature-plan.md` |
+
+Sửa xong ở đây thì cập nhật bản sao tương ứng. Một luồng chạm cả hai mảng phải ghi ở cả hai nơi — đó là giá phải trả của cách chia này.
+
 ## Cách dùng khi code một thứ mới
 
 1. Tìm màn/tính năng tương ứng trong `INDEX.md`. Nếu chưa có dòng nào -> tạo `features/<ten>.md` từ `templates/feature-plan.md` và điền trước phần Mục tiêu, Mockup nguồn, Phạm vi, Không làm.
