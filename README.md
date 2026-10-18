@@ -29,6 +29,23 @@ Hai repo con bump submodule bằng secret `DEPLOY_PAT`. `workflow_run` không d�
 được vì nó **chỉ phát trong cùng một repository** (đo 2026-10-17: run
 `Frontend CI` #2 kết thúc 16:55:16, repo deploy không tạo run nào).
 
+## Ba điều cần biết trước khi sửa luồng nầy
+
+1. **Vercel Hobby chỉ có một ghế.** `vercel deploy --prebuilt` đính kèm email tác
+   giả commit; tác giả không phải thành viên team thì deployment production bị
+   `BLOCKED` với `TEAM_ACCESS_REQUIRED`. Job `Deploy frontend to Vercel` vì thế copy
+   `.vercel/output` sang thư mục tạm không có `.git` rồi deploy từ đó, để merge của
+   bất kỳ thành viên nào cũng lên staging được. Đo 2026-10-18: commit có author
+   `nguyenvana.team@example.com` vẫn cho ra deployment `READY`, alias production đổi.
+2. **Project Vercel `ai-interview` đang git-connect với chính repo nầy**,
+   `productionBranch: main`. Đừng merge `dev → main`: khi build từ git, Vercel không
+   init submodule nên thư mục `frontend/` trống và bản rỗng sẽ lên production, đi
+   trước cả luồng Actions ở đây.
+3. **Render không còn tự build theo commit.** `render.yaml` đặt
+   `autoDeployTrigger: "off"` (phải để trong dấu nháy, YAML 1.1 đọc `off` trần
+   thành boolean); con đường duy nhất còn lại là deploy hook mà job `Deploy backend
+   on Render` gọi.
+
 ## Chạy local
 
 ```bash
